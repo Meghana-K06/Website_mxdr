@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"/><title>Messages — SecurBank</title>
+<style>
+  body{font-family:'Segoe UI',sans-serif;background:#0f1923;color:#e0e0e0;padding:30px;}
+  input,textarea{padding:10px;background:rgba(255,255,255,0.07);
+    border:1px solid rgba(255,255,255,0.15);border-radius:8px;
+    color:#fff;font-size:0.9rem;width:100%;margin-bottom:10px;}
+  button{padding:10px 24px;background:#1565c0;color:#fff;border:none;border-radius:8px;cursor:pointer;}
+  .msg{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
+    border-radius:8px;padding:14px;margin-bottom:12px;}
+  .msg strong{color:#4fc3f7;} .msg small{color:#546e7a;}
+  a{color:#4fc3f7;text-decoration:none;}
+</style></head>
+<body>
+  <a href="/dashboard">← Back</a>
+  <h2 style="margin:20px 0 16px;color:#fff;">💬 Customer Messages</h2>
+  <form method="POST" action="/messages" style="max-width:500px;margin-bottom:24px;">
+    <input type="text" name="username" placeholder="Your name"/>
+    <textarea name="message" rows="3" placeholder="Your message..."></textarea>
+    <button type="submit">Post Message</button>
+  </form>
+  {% for m in messages %}
+  <div class="msg">
+    <strong>{{ m.username }}</strong> <small>{{ m.created_at }}</small>
+    {# ⚠️ VULNERABLE: |safe disables escaping — XSS intended #}
+    <p style="margin-top:8px;">{{ m.message | safe }}</p>
+  </div>
+  {% endfor %}
+</body></html>

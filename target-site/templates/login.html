@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SecurBank — Sign In</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Segoe UI',sans-serif;
+      background:linear-gradient(135deg,#0a1628 0%,#1a3a5c 50%,#0d2137 100%);
+      min-height:100vh;display:flex;align-items:center;justify-content:center;}
+    .wrap{width:100%;max-width:420px;padding:20px;}
+    .logo{text-align:center;margin-bottom:28px;}
+    .logo h1{color:#fff;font-size:2rem;font-weight:700;}
+    .logo h1 span{color:#4fc3f7;}
+    .logo p{color:#90a4ae;font-size:0.85rem;margin-top:4px;}
+    .card{background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);
+      border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:40px;}
+    .card h2{color:#fff;font-size:1.4rem;margin-bottom:6px;}
+    .card p{color:#90a4ae;font-size:0.85rem;margin-bottom:22px;}
+    label{display:block;color:#b0bec5;font-size:0.82rem;margin-bottom:5px;font-weight:500;}
+    input{width:100%;padding:12px 16px;background:rgba(255,255,255,0.07);
+      border:1px solid rgba(255,255,255,0.12);border-radius:8px;
+      color:#fff;font-size:0.95rem;margin-bottom:16px;}
+    input:focus{outline:none;border-color:#4fc3f7;}
+    button{width:100%;padding:13px;
+      background:linear-gradient(135deg,#1565c0,#0d47a1);
+      color:#fff;font-size:1rem;font-weight:600;
+      border:none;border-radius:8px;cursor:pointer;margin-top:6px;}
+    button:hover{background:linear-gradient(135deg,#1976d2,#1565c0);}
+    .error{background:rgba(244,67,54,0.15);border:1px solid rgba(244,67,54,0.3);
+      color:#ef9a9a;padding:12px 16px;border-radius:8px;font-size:0.85rem;margin-bottom:16px;}
+    .hint{color:#546e7a;font-size:0.75rem;text-align:center;margin-top:18px;}
+    .badge{display:inline-block;background:rgba(244,67,54,0.2);color:#ef5350;
+      font-size:0.7rem;padding:2px 8px;border-radius:10px;
+      border:1px solid rgba(244,67,54,0.3);margin-top:10px;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="logo">
+      <h1>🏦 <span>Secur</span>Bank</h1>
+      <p>Secure Online Banking Portal</p>
+    </div>
+    <div class="card">
+      <h2>Sign In</h2>
+      <p>Access your account securely</p>
+      {% if error %}
+        <div class="error">⚠️ {{ error }}</div>
+      {% endif %}
+      <form method="POST" action="/login">
+        <label>Username</label>
+        <input type="text" name="username" placeholder="Enter your username" autocomplete="off"/>
+        <label>Password</label>
+        <input type="password" name="password" placeholder="Enter your password"/>
+        <button type="submit">Sign In →</button>
+      </form>
+      <div class="hint">
+        SecurBank v2.4.1 — Internal Portal
+        <br/><span class="badge">⚠ DEMO ENVIRONMENT</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

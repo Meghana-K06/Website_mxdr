@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>🛡️ Threat Intelligence Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ── Reset & Base ─────────────────────────────────────────────────── */
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#080e1a;--surface:#0d1526;--surface2:#111d33;--border:#1e3050;
+  --text:#e2e8f0;--muted:#4a6080;--accent:#3b82f6;--accent2:#06b6d4;
+  --critical:#ef4444;--high:#f97316;--medium:#eab308;--low:#22c55e;--info:#6b7280;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--surface);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* ── Header ──────────────────────────────────────────────────────── */
+header{
+  background:linear-gradient(135deg,#0a1628,#0d1f3c);
+  border-bottom:1px solid var(--border);
+  padding:16px 24px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo h1{font-size:1.2rem;font-weight:700;color:#fff;}
+.logo h1 span{color:var(--accent2);}
+.header-stats{display:flex;gap:24px;}
+.hstat{text-align:center;}
+.hstat .val{font-size:1.3rem;font-weight:700;color:var(--accent2);}
+.hstat .lbl{font-size:0.7rem;color:var(--muted);text-transform:uppercase;}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;
+  display:inline-block;margin-right:6px;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+.ws-status{font-size:0.78rem;color:var(--muted);display:flex;align-items:center;}
+
+/* ── Layout ──────────────────────────────────────────────────────── */
+.main{padding:20px 24px;display:grid;gap:20px;}
+.row{display:grid;gap:20px;}
+.row-4{grid-template-columns:repeat(4,1fr);}
+.row-2{grid-template-columns:1fr 1fr;}
+.row-3{grid-template-columns:2fr 1fr 1fr;}
+
+/* ── Cards ───────────────────────────────────────────────────────── */
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:20px;
+}
+.card-title{
+  font-size:0.78rem;font-weight:600;text-transform:uppercase;
+  color:var(--muted);letter-spacing:0.5px;margin-bottom:16px;
+  display:flex;align-items:center;gap:8px;
+}
+.card-title .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);}
+
+/* ── Stat Cards ──────────────────────────────────────────────────── */
+.stat-card{position:relative;overflow:hidden;}
+.stat-card .big{font-size:2.2rem;font-weight:800;line-height:1;}
+.stat-card .sub{font-size:0.78rem;color:var(--muted);margin-top:6px;}
+.stat-card .icon{position:absolute;right:16px;top:16px;font-size:2rem;opacity:0.15;}
+.stat-card.critical .big{color:var(--critical);}
+.stat-card.high .big{color:var(--high);}
+.stat-card.medium .big{color:var(--medium);}
+.stat-card.safe .big{color:var(--low);}
+
+/* ── Severity Badge ──────────────────────────────────────────────── */
+.badge{
+  display:inline-block;padding:2px 8px;border-radius:20px;
+  font-size:0.7rem;font-weight:700;text-transform:uppercase;
+}
+.badge.CRITICAL{background:rgba(239,68,68,0.2);color:var(--critical);border:1px solid rgba(239,68,68,0.3);}
+.badge.HIGH{background:rgba(249,115,22,0.2);color:var(--high);border:1px solid rgba(249,115,22,0.3);}
+.badge.MEDIUM{background:rgba(234,179,8,0.2);color:var(--medium);border:1px solid rgba(234,179,8,0.3);}
+.badge.LOW{background:rgba(34,197,94,0.2);color:var(--low);border:1px solid rgba(34,197,94,0.3);}
+.badge.INFO{background:rgba(107,114,128,0.2);color:var(--info);border:1px solid rgba(107,114,128,0.3);}
+
+/* ── Live Log Feed ───────────────────────────────────────────────── */
+#log-feed{height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;}
+.log-entry{
+  padding:8px 12px;border-radius:6px;cursor:pointer;
+  background:var(--surface2);border:1px solid transparent;
+  display:grid;grid-template-columns:140px 110px 60px 1fr 80px;
+  align-items:center;gap:8px;font-size:0.78rem;
+  transition:all 0.15s;border-left:3px solid transparent;
+}
+.log-entry:hover{border-color:var(--accent);background:#152035;}
+.log-entry.CRITICAL{border-left-color:var(--critical);}
+.log-entry.HIGH{border-left-color:var(--high);}
+.log-entry.MEDIUM{border-left-color:var(--medium);}
+.log-entry.LOW{border-left-color:var(--low);}
+.log-entry.INFO{border-left-color:var(--border);}
+.log-entry.new-entry{animation:slideIn 0.3s ease;}
+@keyframes slideIn{from{opacity:0;transform:translateX(-10px);}to{opacity:1;transform:translateX(0);}}
+.log-ts{color:var(--muted);font-family:monospace;font-size:0.72rem;}
+.log-ip{color:var(--accent2);font-family:monospace;}
+.log-method{font-weight:700;color:#a78bfa;}
+.log-path{color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.log-attack{font-size:0.7rem;font-weight:600;color:var(--high);}
+
+/* ── IP Table ────────────────────────────────────────────────────── */
+#ip-table-wrap{height:340px;overflow-y:auto;}
+table{width:100%;border-collapse:collapse;font-size:0.8rem;}
+th{
+  position:sticky;top:0;background:var(--surface);
+  padding:8px 12px;text-align:left;color:var(--muted);
+  font-size:0.72rem;text-transform:uppercase;border-bottom:1px solid var(--border);
+}
+td{padding:8px 12px;border-bottom:1px solid rgba(30,48,80,0.5);}
+tr:hover td{background:var(--surface2);}
+.ip-cell{font-family:monospace;color:var(--accent2);}
+.country-flag{margin-right:4px;}
+
+/* ── Timeline ────────────────────────────────────────────────────── */
+#timeline-wrap{height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;padding-right:4px;}
+.tl-item{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:6px 10px;border-radius:6px;background:var(--surface2);
+  font-size:0.75rem;cursor:pointer;
+  border-left:3px solid var(--border);transition:all 0.15s;
+}
+.tl-item:hover{background:#152035;}
+.tl-item.CRITICAL{border-left-color:var(--critical);}
+.tl-item.HIGH{border-left-color:var(--high);}
+.tl-item.MEDIUM{border-left-color:var(--medium);}
+.tl-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+.tl-dot.CRITICAL{background:var(--critical);}
+.tl-dot.HIGH{background:var(--high);}
+.tl-dot.MEDIUM{background:var(--medium);}
+.tl-dot.LOW{background:var(--low);}
+.tl-time{color:var(--muted);font-family:monospace;white-space:nowrap;}
+.tl-content{flex:1;}
+.tl-main{color:var(--text);}
+.tl-sub{color:var(--muted);font-size:0.7rem;margin-top:1px;}
+
+/* ── Modal ───────────────────────────────────────────────────────── */
+#modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);
+  z-index:1000;align-items:center;justify-content:center;padding:20px;
+}
+#modal-overlay.open{display:flex;}
+#modal{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;width:100%;max-width:820px;max-height:90vh;
+  overflow-y:auto;padding:28px;position:relative;
+}
+.modal-close{
+  position:absolute;top:16px;right:16px;background:var(--surface2);
+  border:1px solid var(--border);color:var(--text);border-radius:8px;
+  padding:4px 12px;cursor:pointer;font-size:1rem;
+}
+.modal-close:hover{background:var(--border);}
+.modal-title{font-size:1.1rem;font-weight:700;color:#fff;margin-bottom:20px;
+  display:flex;align-items:center;gap:10px;}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.modal-section{background:var(--surface2);border:1px solid var(--border);
+  border-radius:10px;padding:16px;}
+.modal-section h3{font-size:0.75rem;text-transform:uppercase;color:var(--muted);
+  letter-spacing:0.5px;margin-bottom:12px;}
+.detail-row{display:flex;justify-content:space-between;align-items:flex-start;
+  margin-bottom:8px;font-size:0.82rem;gap:8px;}
+.detail-label{color:var(--muted);flex-shrink:0;min-width:110px;}
+.detail-value{color:var(--text);text-align:right;word-break:break-all;font-family:monospace;font-size:0.78rem;}
+.mitre-badge{background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);
+  color:#93c5fd;padding:4px 10px;border-radius:6px;font-size:0.75rem;
+  display:inline-block;margin-bottom:6px;}
+.kill-chain-bar{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;}
+.kc-phase{padding:4px 10px;border-radius:6px;font-size:0.72rem;font-weight:600;
+  background:var(--surface);border:1px solid var(--border);color:var(--muted);}
+.kc-phase.active{background:rgba(59,130,246,0.2);border-color:var(--accent);color:var(--accent);}
+.next-steps{list-style:none;margin-top:8px;}
+.next-steps li{padding:5px 0;font-size:0.8rem;color:var(--text);
+  border-bottom:1px solid var(--border);display:flex;gap:8px;}
+.next-steps li:last-child{border-bottom:none;}
+.next-steps li::before{content:'→';color:var(--high);font-weight:700;flex-shrink:0;}
+.payload-box{
+  background:#050d1a;border:1px solid var(--border);border-radius:6px;
+  padding:10px;font-family:monospace;font-size:0.75rem;color:#f87171;
+  word-break:break-all;max-height:80px;overflow-y:auto;margin-top:8px;
+}
+.confidence-bar{height:6px;background:var(--surface);border-radius:3px;margin-top:6px;}
+.confidence-fill{height:100%;border-radius:3px;background:var(--accent);transition:width 0.5s;}
+.modal-full{grid-column:1/-1;}
+.defense-box{background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);
+  border-radius:8px;padding:12px;font-size:0.8rem;color:#86efac;margin-top:8px;}
+
+/* ── Charts ──────────────────────────────────────────────────────── */
+.chart-wrap{position:relative;height:200px;}
+
+/* ── Filter bar ──────────────────────────────────────────────────── */
+.filter-bar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.filter-btn{
+  padding:4px 12px;border-radius:20px;font-size:0.75rem;cursor:pointer;
+  background:var(--surface2);border:1px solid var(--border);color:var(--muted);
+  transition:all 0.15s;
+}
+.filter-btn:hover,.filter-btn.active{
+  background:rgba(59,130,246,0.15);border-color:var(--accent);color:var(--accent);
+}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ──────────────────────────────────────────────────────────── -->
+<header>
+  <div class="logo">
+    <span style="font-size:1.5rem">🛡️</span>
+    <div>
+      <h1>Threat <span>Intelligence</span> Dashboard</h1>
+      <div class="ws-status"><span class="status-dot" id="ws-dot"></span><span id="ws-label">Connecting...</span></div>
+    </div>
+  </div>
+  <div class="header-stats">
+    <div class="hstat"><div class="val" id="h-total">0</div><div class="lbl">Total Requests</div></div>
+    <div class="hstat"><div class="val" id="h-attacks" style="color:var(--high)">0</div><div class="lbl">Attacks</div></div>
+    <div class="hstat"><div class="val" id="h-ips">0</div><div class="lbl">Unique IPs</div></div>
+    <div class="hstat"><div class="val" id="h-rate" style="color:var(--medium)">0%</div><div class="lbl">Attack Rate</div></div>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- ── ROW 1: Stat Cards ──────────────────────────────────────────── -->
+  <div class="row row-4">
+    <div class="card stat-card critical">
+      <div class="card-title"><span class="dot" style="background:var(--critical)"></span>Critical</div>
+      <div class="big" id="s-critical">0</div>
+      <div class="sub">Active threats</div>
+      <div class="icon">🔴</div>
+    </div>
+    <div class="card stat-card high">
+      <div class="card-title"><span class="dot" style="background:var(--high)"></span>High</div>
+      <div class="big" id="s-high">0</div>
+      <div class="sub">High severity</div>
+      <div class="icon">🟠</div>
+    </div>
+    <div class="card stat-card medium">
+      <div class="card-title"><span class="dot" style="background:var(--medium)"></span>Medium</div>
+      <div class="big" id="s-medium">0</div>
+      <div class="sub">Medium severity</div>
+      <div class="icon">🟡</div>
+    </div>
+    <div class="card stat-card safe">
+      <div class="card-title"><span class="dot" style="background:var(--low)"></span>Normal</div>
+      <div class="big" id="s-normal">0</div>
+      <div class="sub">Clean requests</div>
+      <div class="icon">🟢</div>
+    </div>
+  </div>
+
+  <!-- ── ROW 2: Charts ─────────────────────────────────────────────── -->
+  <div class="row row-2">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Attack Types Distribution</div>
+      <div class="chart-wrap"><canvas id="chart-attacks"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Request Timeline</div>
+      <div class="chart-wrap"><canvas id="chart-timeline"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── ROW 3: Live Feed + Timeline ───────────────────────────────── -->
+  <div class="row row-2">
+    <div class="card">
+      <div class="card-title"><span class="dot" style="animation:pulse 1s infinite"></span>Live Log Feed
+        <span style="margin-left:auto;font-size:0.7rem;color:var(--muted)" id="feed-count">0 events</span>
+      </div>
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="setFilter('ALL')">All</button>
+        <button class="filter-btn" onclick="setFilter('ATTACK')">Attacks Only</button>
+        <button class="filter-btn" onclick="setFilter('CRITICAL')">Critical</button>
+        <button class="filter-btn" onclick="setFilter('SQLI')">SQLi</button>
+        <button class="filter-btn" onclick="setFilter('XSS')">XSS</button>
+        <button class="filter-btn" onclick="setFilter('CMDI')">CMDi</button>
+      </div>
+      <div id="log-feed"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--high)"></span>Attack Timeline
+        <span style="margin-left:auto;font-size:0.7rem;color:var(--muted)" id="timeline-count">0 attacks</span>
+      </div>
+      <div id="timeline-wrap"></div>
+    </div>
+  </div>
+
+  <!-- ── ROW 4: IP Table ───────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--accent2)"></span>Visitor IP Intelligence
+      <span style="margin-left:auto;font-size:0.7rem;color:var(--muted)" id="ip-count">0 IPs</span>
+    </div>
+    <div id="ip-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>IP Address</th><th>Location</th><th>Organization</th>
+            <th>Requests</th><th>Attacks</th><th>Attack Types</th>
+            <th>Max Severity</th><th>Last Seen</th>
+          </tr>
+        </thead>
+        <tbody id="ip-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /.main -->
+
+<!-- ── DETAIL MODAL ─────────────────────────────────────────────────────── -->
+<div id="modal-overlay" onclick="closeModal(event)">
+  <div id="modal">
+    <button class="modal-close" onclick="closeModal()">✕ Close</button>
+    <div class="modal-title" id="modal-title">Event Detail</div>
+    <div class="modal-grid" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ── STATE ─────────────────────────────────────────────────────────────────
+let allEvents   = [];
+let currentFilter = 'ALL';
+let ws;
+let attackChart, timelineChart;
+let statsData   = {};
+
+// ── WEBSOCKET ─────────────────────────────────────────────────────────────
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}/ws`);
+
+  ws.onopen = () => {
+    document.getElementById('ws-dot').style.background  = '#22c55e';
+    document.getElementById('ws-label').textContent     = 'Live';
+    setInterval(() => ws.readyState === 1 && ws.send('ping'), 20000);
+  };
+
+  ws.onmessage = (e) => {
+    const event = JSON.parse(e.data);
+    allEvents.unshift(event);
+    if (allEvents.length > 500) allEvents.pop();
+    renderFeed();
+    if (event.is_attack) renderTimeline();
+    updateHeaderStats();
+    updateStatCards();
+  };
+
+  ws.onclose = () => {
+    document.getElementById('ws-dot').style.background = '#ef4444';
+    document.getElementById('ws-label').textContent    = 'Reconnecting...';
+    setTimeout(connectWS, 3000);
+  };
+}
+
+// ── LOAD INITIAL DATA ─────────────────────────────────────────────────────
+async function loadInitialData() {
+  try {
+    const [eventsRes, statsRes, ipsRes] = await Promise.all([
+      fetch('/api/events?limit=200'),
+      fetch('/api/stats'),
+      fetch('/api/ips'),
+    ]);
+    const eventsData = await eventsRes.json();
+    statsData        = await statsRes.json();
+    const ipsData    = await ipsRes.json();
+
+    allEvents = eventsData.events || [];
+    renderFeed();
+    renderTimeline();
+    renderIPTable(ipsData.ips || []);
+    updateHeaderStats();
+    updateStatCards();
+    renderCharts();
+  } catch(e) {
+    console.error('Failed to load initial data:', e);
+  }
+}
+
+// Refresh stats/charts/IPs every 15 seconds
+setInterval(async () => {
+  try {
+    const [statsRes, ipsRes] = await Promise.all([
+      fetch('/api/stats'), fetch('/api/ips')
+    ]);
+    statsData      = await statsRes.json();
+    const ipsData  = await ipsRes.json();
+    renderIPTable(ipsData.ips || []);
+    updateCharts();
+    updateHeaderStats();
+    updateStatCards();
+  } catch(e) {}
+}, 15000);
+
+// ── HEADER STATS ──────────────────────────────────────────────────────────
+function updateHeaderStats() {
+  const total   = allEvents.length;
+  const attacks = allEvents.filter(e => e.is_attack).length;
+  const ips     = new Set(allEvents.map(e => e.ip)).size;
+  const rate    = total ? ((attacks/total)*100).toFixed(1) : 0;
+  document.getElementById('h-total').textContent   = total;
+  document.getElementById('h-attacks').textContent = attacks;
+  document.getElementById('h-ips').textContent     = ips;
+  document.getElementById('h-rate').textContent    = rate + '%';
+}
+
+function updateStatCards() {
+  const counts = {CRITICAL:0, HIGH:0, MEDIUM:0, INFO:0};
+  allEvents.forEach(e => {
+    const s = e.severity || 'INFO';
+    if (s === 'CRITICAL') counts.CRITICAL++;
+    else if (s === 'HIGH') counts.HIGH++;
+    else if (s === 'MEDIUM') counts.MEDIUM++;
+    else counts.INFO++;
+  });
+  document.getElementById('s-critical').textContent = counts.CRITICAL;
+  document.getElementById('s-high').textContent     = counts.HIGH;
+  document.getElementById('s-medium').textContent   = counts.MEDIUM;
+  document.getElementById('s-normal').textContent   = counts.INFO;
+}
+
+// ── LIVE FEED ─────────────────────────────────────────────────────────────
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.trim().toUpperCase().replace(' ONLY','') === f ||
+      (f==='ALL' && b.textContent==='All'));
+  });
+  renderFeed();
+}
+
+function renderFeed() {
+  let events = allEvents;
+  if (currentFilter === 'ATTACK')   events = events.filter(e => e.is_attack);
+  else if (currentFilter !== 'ALL') events = events.filter(e =>
+    e.severity === currentFilter ||
+    (e.attacks||[]).some(a => a.type === currentFilter)
+  );
+
+  const feed  = document.getElementById('log-feed');
+  const shown = events.slice(0, 80);
+  document.getElementById('feed-count').textContent = `${shown.length} events`;
+
+  feed.innerHTML = shown.map((e, i) => {
+    const sev     = e.severity || 'INFO';
+    const atk     = e.is_attack ? (e.primary_attack || 'ATTACK') : '';
+    const ts      = new Date(e.timestamp).toLocaleTimeString();
+    const path    = (e.path||'/').substring(0,35);
+    return `<div class="log-entry ${sev} ${i===0?'new-entry':''}"
+      onclick="showDetail('${e.id}')">
+      <span class="log-ts">${ts}</span>
+      <span class="log-ip">${e.ip||'?'}</span>
+      <span class="log-method">${e.method||'GET'}</span>
+      <span class="log-path" title="${e.path||'/'}">${path}</span>
+      <span>${atk ? `<span class="badge ${sev}">${atk}</span>` : `<span style="color:var(--muted);font-size:0.72rem">${e.status||200}</span>`}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── ATTACK TIMELINE ───────────────────────────────────────────────────────
+function renderTimeline() {
+  const attacks = allEvents.filter(e => e.is_attack).slice(0, 40);
+  const wrap    = document.getElementById('timeline-wrap');
+  document.getElementById('timeline-count').textContent = `${attacks.length} attacks`;
+
+  wrap.innerHTML = attacks.map(e => {
+    const sev  = e.severity || 'HIGH';
+    const atk  = e.primary_attack || 'ATTACK';
+    const ts   = new Date(e.timestamp).toLocaleTimeString();
+    const city = e.geolocation?.city || '?';
+    const cc   = e.geolocation?.country || '?';
+    return `<div class="tl-item ${sev}" onclick="showDetail('${e.id}')">
+      <div class="tl-dot ${sev}"></div>
+      <div class="tl-content">
+        <div class="tl-main"><strong>${atk}</strong> from ${e.ip} <span class="badge ${sev}">${sev}</span></div>
+        <div class="tl-sub">${ts} · ${city}, ${cc} · ${e.path||'/'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── IP TABLE ──────────────────────────────────────────────────────────────
+function renderIPTable(ips) {
+  document.getElementById('ip-count').textContent = `${ips.length} IPs`;
+  const body = document.getElementById('ip-table-body');
+  body.innerHTML = ips.map(ip => {
+    const geo    = ip.geo || {};
+    const types  = Object.entries(ip.attack_types||{})
+      .map(([t,c]) => `<span class="badge HIGH" style="margin:1px">${t}×${c}</span>`).join('');
+    const sev    = ip.severity_max || 'INFO';
+    const ls     = ip.last_seen ? new Date(ip.last_seen).toLocaleString() : '?';
+    return `<tr>
+      <td class="ip-cell">${ip.ip}</td>
+      <td>${geo.city||'?'}, ${geo.country||'?'}</td>
+      <td style="color:var(--muted);font-size:0.75rem">${(geo.org||'?').substring(0,28)}</td>
+      <td style="text-align:center">${ip.total_requests}</td>
+      <td style="text-align:center;color:${ip.total_attacks>0?'var(--high)':'var(--low)'}">${ip.total_attacks}</td>
+      <td>${types||'<span style="color:var(--muted)">—</span>'}</td>
+      <td><span class="badge ${sev}">${sev}</span></td>
+      <td style="color:var(--muted);font-size:0.75rem">${ls}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── CHARTS ────────────────────────────────────────────────────────────────
+function renderCharts() {
+  // Attack type doughnut
+  const atkCtx  = document.getElementById('chart-attacks').getContext('2d');
+  const atkData = statsData.attack_types || {};
+  attackChart   = new Chart(atkCtx, {
+    type: 'doughnut',
+    data: {
+      labels:   Object.keys(atkData),
+      datasets: [{
+        data:            Object.values(atkData),
+        backgroundColor: ['#ef4444','#f97316','#eab308','#3b82f6','#8b5cf6','#06b6d4'],
+        borderWidth:     0,
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{size:11},boxWidth:12}}}
+    }
+  });
+
+  // Timeline line chart
+  const tlCtx    = document.getElementById('chart-timeline').getContext('2d');
+  const tlData   = statsData.hourly_timeline || {};
+  const tlLabels = Object.keys(tlData).map(h => h.split(' ')[1] || h);
+  timelineChart  = new Chart(tlCtx, {
+    type: 'line',
+    data: {
+      labels:   tlLabels,
+      datasets: [{
+        label:           'Requests',
+        data:            Object.values(tlData),
+        borderColor:     '#3b82f6',
+        backgroundColor: 'rgba(59,130,246,0.1)',
+        fill:            true,
+        tension:         0.4,
+        pointRadius:     3,
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#4a6080',maxTicksLimit:8},grid:{color:'rgba(30,48,80,0.5)'}},
+        y:{ticks:{color:'#4a6080'},grid:{color:'rgba(30,48,80,0.5)'}}
+      }
+    }
+  });
+}
+
+function updateCharts() {
+  if (!attackChart || !timelineChart) return;
+  const atkData = statsData.attack_types || {};
+  attackChart.data.labels   = Object.keys(atkData);
+  attackChart.data.datasets[0].data = Object.values(atkData);
+  attackChart.update();
+
+  const tlData  = statsData.hourly_timeline || {};
+  timelineChart.data.labels = Object.keys(tlData).map(h => h.split(' ')[1]||h);
+  timelineChart.data.datasets[0].data = Object.values(tlData);
+  timelineChart.update();
+}
+
+// ── DETAIL MODAL ──────────────────────────────────────────────────────────
+const KILL_CHAIN_PHASES = [
+  'Reconnaissance','Weaponization / Delivery','Delivery',
+  'Exploitation','Installation / C2','Actions on Objectives'
+];
+
+async function showDetail(id) {
+  const event = allEvents.find(e => e.id === id);
+  if (!event) return;
+
+  const overlay = document.getElementById('modal-overlay');
+  const body    = document.getElementById('modal-body');
+  const title   = document.getElementById('modal-title');
+  const sev     = event.severity || 'INFO';
+  const atk     = event.attacks?.[0] || {};
+  const mitre   = atk.mitre  || {};
+  const owasp   = atk.owasp  || {};
+  const kc      = atk.kill_chain || {};
+  const geo     = event.geolocation || {};
+  const ts      = new Date(event.timestamp).toLocaleString();
+
+  title.innerHTML = `<span class="badge ${sev}">${sev}</span>
+    ${event.is_attack ? '🚨 ' + (event.primary_attack||'ATTACK') : '📋 Normal Request'}
+    <span style="color:var(--muted);font-size:0.85rem;font-weight:400">— ${event.ip}</span>`;
+
+  // Kill chain bar
+  const kcBar = KILL_CHAIN_PHASES.map(p =>
+    `<span class="kc-phase ${p === kc.phase ? 'active' : ''}">${p}</span>`
+  ).join('');
+
+  // Next steps
+  const nextSteps = (event.next_steps||[]).map(s =>
+    `<li>${s}</li>`
+  ).join('');
+
+  // Attack type badges
+  const atkBadges = (event.attacks||[]).map(a =>
+    `<span class="badge ${a.severity}">${a.type}</span>`
+  ).join(' ');
+
+  body.innerHTML = `
+    <!-- Request Info -->
+    <div class="modal-section">
+      <h3>📋 Request Details</h3>
+      <div class="detail-row"><span class="detail-label">Timestamp</span><span class="detail-value">${ts}</span></div>
+      <div class="detail-row"><span class="detail-label">Source IP</span><span class="detail-value" style="color:var(--accent2)">${event.ip}</span></div>
+      <div class="detail-row"><span class="detail-label">Method</span><span class="detail-value" style="color:#a78bfa">${event.method}</span></div>
+      <div class="detail-row"><span class="detail-label">Path</span><span class="detail-value">${event.path}</span></div>
+      <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${event.status}</span></div>
+      <div class="detail-row"><span class="detail-label">Duration</span><span class="detail-value">${event.duration_ms}ms</span></div>
+      <div class="detail-row"><span class="detail-label">User Agent</span><span class="detail-value" style="font-size:0.7rem">${event.user_agent||'?'}</span></div>
+    </div>
+
+    <!-- Geo -->
+    <div class="modal-section">
+      <h3>🌍 Geolocation</h3>
+      <div class="detail-row"><span class="detail-label">City</span><span class="detail-value">${geo.city||'?'}</span></div>
+      <div class="detail-row"><span class="detail-label">Region</span><span class="detail-value">${geo.region||'?'}</span></div>
+      <div class="detail-row"><span class="detail-label">Country</span><span class="detail-value">${geo.country||'?'}</span></div>
+      <div class="detail-row"><span class="detail-label">Organization</span><span class="detail-value">${geo.org||'?'}</span></div>
+      <div class="detail-row"><span class="detail-label">Coordinates</span><span class="detail-value">${geo.loc||'?'}</span></div>
+    </div>
+
+    <!-- Attack Info -->
+    <div class="modal-section">
+      <h3>⚔️ Attack Classification</h3>
+      <div class="detail-row"><span class="detail-label">Detected Types</span><span class="detail-value">${atkBadges||'—'}</span></div>
+      <div class="detail-row"><span class="detail-label">Severity</span><span class="detail-value"><span class="badge ${sev}">${sev}</span></span></div>
+      <div class="detail-row"><span class="detail-label">Confidence</span><span class="detail-value">${atk.confidence||0}%</span></div>
+      <div class="confidence-bar"><div class="confidence-fill" style="width:${atk.confidence||0}%"></div></div>
+    </div>
+
+    <!-- MITRE -->
+    <div class="modal-section">
+      <h3>🎯 MITRE ATT&CK</h3>
+      <div style="margin-bottom:8px">
+        <span class="mitre-badge">${mitre.technique_id||'—'}</span>
+        <span class="mitre-badge" style="background:rgba(6,182,212,0.15);border-color:rgba(6,182,212,0.3);color:#67e8f9">${mitre.tactic||'—'}</span>
+      </div>
+      <div class="detail-row"><span class="detail-label">Technique</span><span class="detail-value">${mitre.technique_name||'—'}</span></div>
+      <div class="detail-row"><span class="detail-label">Tactic ID</span><span class="detail-value">${mitre.tactic_id||'—'}</span></div>
+      <div style="color:var(--muted);font-size:0.75rem;margin-top:6px">${mitre.description||''}</div>
+    </div>
+
+    <!-- OWASP -->
+    <div class="modal-section">
+      <h3>🔐 OWASP Top 10</h3>
+      <div class="detail-row"><span class="detail-label">Category</span><span class="detail-value" style="color:var(--high)">${owasp.id||'—'}</span></div>
+      <div class="detail-row"><span class="detail-label">Name</span><span class="detail-value">${owasp.name||'—'}</span></div>
+      <div style="color:var(--muted);font-size:0.75rem;margin-top:6px">${owasp.description||''}</div>
+    </div>
+
+    <!-- Payload -->
+    <div class="modal-section">
+      <h3>💉 Captured Payload</h3>
+      <div class="payload-box">${escHtml(event.payload||'No payload captured')}</div>
+    </div>
+
+    <!-- Kill Chain -->
+    <div class="modal-section modal-full">
+      <h3>⛓️ Cyber Kill Chain Phase</h3>
+      <div style="color:var(--text);font-size:0.82rem;margin-bottom:8px">${kc.description||'No kill chain data available.'}</div>
+      <div class="kill-chain-bar">${kcBar}</div>
+    </div>
+
+    <!-- Next Steps -->
+    <div class="modal-section modal-full">
+      <h3>🔮 Predicted Attacker Next Steps</h3>
+      <ul class="next-steps">${nextSteps||'<li>No predictions available</li>'}</ul>
+    </div>
+
+    <!-- Defense -->
+    <div class="modal-section modal-full">
+      <h3>🛡️ Recommended Defense</h3>
+      <div class="defense-box">${atk.defense||'Review and sanitize all user inputs.'}</div>
+    </div>
+  `;
+
+  overlay.classList.add('open');
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modal-overlay'))
+    document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+loadInitialData();
+connectWS();
+</script>
+</body>
+</html>
