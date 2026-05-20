@@ -1,0 +1,73 @@
+#TO RUN
+
+#TERMINAL 1: Start Flask
+cd Desktop/website-mxdr
+source venv/bin/activate
+cd target-site
+python app.py
+
+#TERMINAL 2: Start ngrok
+ngrok http --domain=lipogrammatic-cytotoxic-cecil.ngrok-free.dev 3000
+
+#TERMINAL 3: Start dashboard
+cd Desktop/website-mxdr
+source venv/bin/activate
+cd dashboard
+python main.py
+
+
+========================================================================
+
+#If venv problem occurs
+
+which python  → (nothing!)
+which pip     → /home/meghana/.local/bin/pip  ← system pip, not venv
+which python3 → /usr/bin/python3              ← system python, not venv
+
+
+# Step 1 — deactivate current broken venv
+deactivate
+
+# Step 2 — delete the broken one
+cd ~/Desktop/website-mxdr
+rm -rf .venv
+
+# Step 3 — make sure python3-venv is installed
+sudo apt install python3-venv python3-full -y
+
+# Step 4 — recreate it fresh
+python3 -m venv .venv
+
+# Step 5 — activate it
+source .venv/bin/activate
+
+# Step 6 — verify it's correct NOW
+which python
+which pip
+```
+
+You should now see:
+```
+/home/meghana/Desktop/website-mxdr/.venv/bin/python
+/home/meghana/Desktop/website-mxdr/.venv/bin/pip
+
+
+# Remove it from git tracking if it was already added
+git rm -r --cached .venv 2>/dev/null || true
+git add .gitignore
+git commit -m "fix: remove venv from tracking, update gitignore"
+
+========================================================================
+
+#Installing ngrok ( Check ngrok version first )
+
+curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
+  | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null \
+  && echo "deb https://ngrok-agent.s3.amazonaws.com buster main" \
+  | sudo tee /etc/apt/sources.list.d/ngrok.list \
+  && sudo apt update && sudo apt install ngrok
+
+
+#ngrok auth token setup
+
+ngrok config add-authtoken 3AWHwqrVEyaiFoiC31Yicg0e9qS_6kuKpz1ri5AyA43gXdzcK
