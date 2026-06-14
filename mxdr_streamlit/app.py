@@ -4,6 +4,7 @@
 import os, sys, json, time
 from datetime import datetime, timezone
 from collections import defaultdict, Counter
+from sample_logs import generate_sample_logs
 
 import streamlit as st
 import pandas as pd
@@ -195,6 +196,28 @@ with st.sidebar:
     if st.button('🔄 Refresh Data', use_container_width=True):
         st.cache_data.clear()
         st.rerun()
+    st.divider()
+    st.markdown('### 🧪 Demo')
+    st.caption('No logs yet? Load sample attack scenarios to populate the dashboard.')
+    sample_count = st.select_slider(
+        'Number of sample logs',
+        options=[20, 40, 60, 80, 100, 150, 200],
+        value=80,
+    )
+    if st.button('📂 Load Sample Logs', use_container_width=True, type='primary'):
+        with st.spinner('Generating sample attack logs...'):
+            n = generate_sample_logs(sample_count)
+            st.cache_data.clear()
+        st.success(f'✅ Loaded {n} sample log entries!')
+        st.rerun()
+
+    if st.button('🗑️ Clear All Logs', use_container_width=True):
+        log_path = os.path.join(BASE_DIR, 'logs', 'access.log')
+        if os.path.exists(log_path):
+            open(log_path, 'w').close()
+            st.cache_data.clear()
+            st.success('Logs cleared.')
+            st.rerun()
 
     st.divider()
     blocked = get_blocked_ips()
