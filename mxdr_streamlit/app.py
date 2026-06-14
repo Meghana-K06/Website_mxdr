@@ -174,6 +174,7 @@ def sev_badge(s: str) -> str:
 with st.sidebar:
     st.markdown('## 🛡️ WEB MXDR')
     st.markdown('<p style="color:#4a6080;font-size:.78rem;margin-top:-10px;">Managed Extended Detection & Response</p>', unsafe_allow_html=True)
+    st.markdown('## For Demonstration purpose load the sample logs. For real time web attack detection on honeypot website- https://lipogrammatic-cytotoxic-cecil.ngrok-free.dev/login, We need to first start the ngrok middleware server')
     st.divider()
 
     st.session_state.analyst_name = st.text_input(
