@@ -1,0 +1,65 @@
+[
+  {
+    "ip": "127.0.0.1",
+    "reason": "CRITICAL severity threshold",
+    "event_id": "e1e64cd0811a",
+    "severity": "CRITICAL",
+    "timestamp": "2026-06-14T20:15:17.357738+00:00"
+  },
+  {
+    "ip": "118.95.65.182",
+    "reason": "CRITICAL severity threshold",
+    "event_id": "962e3a8916db",
+    "severity": "CRITICAL",
+    "timestamp": "2026-06-14T20:15:17.369887+00:00"
+  },
+  {
+    "ip": "117.200.57.129",
+    "reason": "CRITICAL severity threshold",
+    "event_id": "06a6be58bb1d",
+    "severity": "CRITICAL",
+    "timestamp": "2026-06-14T20:15:17.389338+00:00"
+  },
+  {
+    "ip": "106.221.205.19",
+    "reason": "BRUTE_FORCE confidence 100.0%",
+    "event_id": "c7c8b2620bb6",
+    "severity": "MEDIUM",
+    "timestamp": "2026-06-14T20:15:17.397065+00:00"
+  },
+  {
+    "ip": "2401:4900:94f0:6231:42fa:cc92:c652:4dc8",
+    "reason": "CRITICAL severity threshold",
+    "event_id": "8cf296b7b9cb",
+    "severity": "CRITICAL",
+    "timestamp": "2026-06-14T20:15:17.425532+00:00"
+  },
+  {
+    "ip": "2409:40f2:10:ecfb:8000::",
+    "reason": "CRITICAL severity threshold",
+    "event_id": "49d25d9efffc",
+    "severity": "CRITICAL",
+    "timestamp": "2026-06-14T20:15:17.431602+00:00"
+  },
+  {
+    "ip": "2401:4900:94f0:6231:7805:ccc0:78f6:ef4a",
+    "reason": "CRITICAL severity threshold",
+    "event_id": "845d3381df57",
+    "severity": "CRITICAL",
+    "timestamp": "2026-06-14T20:15:17.441264+00:00"
+  },
+  {
+    "ip": "2409:40f2:1168:6f98:db9:f6be:6230:f56c",
+    "reason": "CRITICAL severity threshold",
+    "event_id": "9aec9d050966",
+    "severity": "CRITICAL",
+    "timestamp": "2026-06-14T20:33:02.400943+00:00"
+  },
+  {
+    "ip": "157.50.191.22",
+    "reason": "CRITICAL severity threshold",
+    "event_id": "f1553aea2a7f",
+    "severity": "CRITICAL",
+    "timestamp": "2026-06-14T20:33:02.412968+00:00"
+  }
+]
