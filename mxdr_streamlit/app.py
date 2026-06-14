@@ -21,8 +21,7 @@ from ip_manager  import (
     save_feedback, get_all_feedback, get_feedback_for_event, get_feedback_stats,
 )
 
-LOG_FILE = '/home/meghana/Desktop/web_MXDR/logs/access.log'
-
+LOG_FILE = os.path.join(BASE_DIR, 'logs', 'access.log')
 # ─────────────────────────────────────────────────────────────────────────────
 # PAGE CONFIG
 # ─────────────────────────────────────────────────────────────────────────────
