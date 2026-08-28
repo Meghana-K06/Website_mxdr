@@ -14,6 +14,10 @@ from routes.bank import bank_bp
 load_dotenv(os.path.join(os.path.dirname(__file__), '../.env'))
 
 app = Flask(__name__)
+@app.after_request
+def add_ngrok_header(response):
+    response.headers['ngrok-skip-browser-warning'] = 'true'
+    return response
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'fallback-secret-key')
 
 # Init DB on startup

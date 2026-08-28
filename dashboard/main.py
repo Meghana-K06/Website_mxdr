@@ -247,7 +247,10 @@ async def health():
 
 @app.get('/', response_class=HTMLResponse)
 async def dashboard(request: Request):
-    return TEMPLATES.TemplateResponse('dashboard.html', {'request': request})
+    return TEMPLATES.TemplateResponse(
+    request=request,
+    name='dashboard.html',
+    context={'request': request})
 
 # ─────────────────────────────────────────────────────────────────────────────
 

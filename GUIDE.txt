@@ -71,3 +71,12 @@ curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
 #ngrok auth token setup
 
 ngrok config add-authtoken 3AWHwqrVEyaiFoiC31Yicg0e9qS_6kuKpz1ri5AyA43gXdzcK
+
+
+========================================================================
+
+Web mxdr: ur project at present uses demo sample logs
+To change to live logs-
+ngrok http 3000 --request-header-add "ngrok-skip-browser-warning:true"
+
+LOG_FILE = '/home/meghana/Desktop/web_MXDR/logs/access.log'
