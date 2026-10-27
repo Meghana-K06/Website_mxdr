@@ -2,7 +2,7 @@
 
 #TERMINAL 1: Start Flask
 cd Desktop/website-mxdr
-source venv/bin/activate
+source .venv/bin/activate
 cd target-site
 python app.py
 
@@ -11,7 +11,7 @@ ngrok http --domain=lipogrammatic-cytotoxic-cecil.ngrok-free.dev 3000
 
 #TERMINAL 3: Start dashboard
 cd Desktop/website-mxdr
-source venv/bin/activate
+source .venv/bin/activate
 cd dashboard
 python main.py
 
