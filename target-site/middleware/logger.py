@@ -14,7 +14,7 @@ LOG_FILE = os.path.join(
 
 PATTERNS = {
     'SQLI': [
-        r"'", r'--', r';', r'\bUNION\b.*\bSELECT\b', r'\bOR\b\s+1\s*=\s*1',
+        r'--', r'\bUNION\b.*\bSELECT\b', r'\bOR\b\s+1\s*=\s*1',
         r'\bDROP\b.*\bTABLE\b', r'\bINSERT\b.*\bINTO\b',
         r'\bSELECT\b.*\bFROM\b', r'SLEEP\s*\(', r'BENCHMARK\s*\(',
         r'\bAND\b\s+\d+\s*=\s*\d+', r'xp_cmdshell', r'information_schema',
@@ -85,7 +85,6 @@ def setup_logging(app):
             json.dumps(request.form.to_dict()),
             json.dumps(request.args.to_dict()),
             request.get_data(as_text=True) or '',
-            request.headers.get('User-Agent', ''),
         ])
 
         attack_hints = detect_attack_hints(req_data, request.path, request.method)

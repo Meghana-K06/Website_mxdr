@@ -189,13 +189,6 @@ def analyze(log_entry: dict) -> dict:
     if brute:
         detected_attacks.append('BRUTE_FORCE')
 
-    # Use hints from logger as fallback
-    hints = log_entry.get('attack_hints', [])
-    for h in hints:
-        h_clean = h.replace('_ATTEMPT', '')
-        if h_clean not in detected_attacks:
-            detected_attacks.append(h_clean)
-
     # ── 2. Determine primary attack & severity ────────────────────────────────
     if not detected_attacks:
         # Normal traffic
